@@ -1,0 +1,8 @@
+*.csv 
+*.pth 
+*.ckpt 
+*.ipynb 
+__pycache__/ 
+data/ 
+datasets/ 
+aj051k/ 
