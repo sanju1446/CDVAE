@@ -1,0 +1,1553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CDVAE Crystal Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet"/>
+<!-- Plotly.js replaces 3Dmol — lighter, zero config, pure JS -->
+<script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+
+<style>
+  :root {
+    --bg: #0a0c10;
+    --bg2: #111318;
+    --bg3: #181c23;
+    --card: #151820;
+    --card2: #1c2030;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --text: #e8eaf0;
+    --text2: #8a9ab8;
+    --text3: #4a5568;
+    --accent: #4fc3f7;
+    --accent2: #81d4fa;
+    --green: #66bb6a;
+    --amber: #ffca28;
+    --red: #ef5350;
+    --purple: #ab47bc;
+    --teal: #26c6da;
+    --mono: 'Space Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.65;
+    min-height: 100vh;
+  }
+
+  /* HEADER */
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 1.5rem 2.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: var(--bg);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+  .logo-icon {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, #1565c0, #4fc3f7);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .logo-icon svg { width: 20px; height: 20px; }
+  .logo-text { font-family: var(--mono); font-size: 14px; color: var(--text); }
+  .logo-text span { color: var(--accent); }
+  .header-tag {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+    border: 1px solid var(--border);
+    padding: 3px 8px;
+    border-radius: 4px;
+    letter-spacing: 0.08em;
+  }
+
+  /* LAYOUT */
+  main { max-width: 1100px; margin: 0 auto; padding: 3rem 2rem 5rem; }
+
+  /* HERO */
+  .hero { margin-bottom: 3rem; }
+  .hero h1 {
+    font-family: var(--mono);
+    font-size: clamp(24px, 4vw, 38px);
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.02em;
+    margin-bottom: 0.5rem;
+  }
+  .hero h1 em { color: var(--accent); font-style: normal; }
+  .hero p { color: var(--text2); font-size: 15px; max-width: 540px; font-weight: 300; }
+
+  /* INPUT PANEL */
+  .input-panel {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 2rem;
+    margin-bottom: 2.5rem;
+  }
+  .input-panel h2 {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text3);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 1.5rem;
+  }
+  .input-row { display: flex; gap: 1rem; flex-wrap: wrap; align-items: flex-end; }
+  .field { flex: 1; min-width: 200px; }
+  .field label {
+    display: block;
+    font-size: 12px;
+    color: var(--text2);
+    margin-bottom: 6px;
+    font-family: var(--mono);
+    letter-spacing: 0.05em;
+  }
+  .field input, .field select {
+    width: 100%;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 14px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .field input:focus, .field select:focus { border-color: var(--accent); }
+  .field select option { background: var(--bg3); }
+
+  .element-tags {
+    display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; min-height: 24px;
+  }
+  .el-tag {
+    display: flex; align-items: center; gap: 4px;
+    background: rgba(79,195,247,0.12);
+    border: 1px solid rgba(79,195,247,0.3);
+    color: var(--accent);
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 3px 8px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .el-tag:hover { background: rgba(79,195,247,0.22); }
+  .el-tag .rm { opacity: 0.5; font-size: 14px; line-height: 1; }
+
+  .hint { font-size: 11px; color: var(--text3); margin-top: 6px; font-family: var(--mono); }
+
+  .btn-generate {
+    padding: 11px 28px;
+    background: var(--accent);
+    color: #000;
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 700;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+    white-space: nowrap;
+    letter-spacing: 0.04em;
+    align-self: flex-end;
+  }
+  .btn-generate:hover { opacity: 0.88; }
+  .btn-generate:active { transform: scale(0.97); }
+  .btn-generate:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  /* LOADING */
+  .loading-bar {
+    display: none;
+    height: 2px;
+    background: var(--border);
+    border-radius: 2px;
+    margin-top: 1.5rem;
+    overflow: hidden;
+  }
+  .loading-bar.active { display: block; }
+  .loading-bar::after {
+    content: '';
+    display: block;
+    height: 100%;
+    background: var(--accent);
+    animation: slide 1.5s infinite;
+    border-radius: 2px;
+  }
+  @keyframes slide { 0%{transform:translateX(-100%)} 100%{transform:translateX(400%)} }
+
+  .loading-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text3);
+    margin-top: 6px;
+    display: none;
+  }
+  .loading-label.active { display: block; }
+
+  /* RESULTS */
+  #results { display: none; }
+  #results.visible { display: block; animation: fadeUp 0.4s ease; }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+
+  .results-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 1.5rem;
+  }
+  .results-header h2 {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--text2);
+    letter-spacing: 0.1em;
+  }
+  .results-badge {
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 3px 9px;
+    border-radius: 20px;
+    background: rgba(79,195,247,0.12);
+    color: var(--accent);
+    border: 1px solid rgba(79,195,247,0.25);
+  }
+
+  /* REFRESH BUTTON */
+  .btn-refresh {
+    padding: 9px 20px;
+    background: transparent;
+    color: var(--text2);
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 700;
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+    letter-spacing: 0.04em;
+  }
+  .btn-refresh:hover { border-color: var(--accent); color: var(--accent); background: rgba(79,195,247,0.07); }
+
+  /* STRUCTURE CARD */
+  .structure-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    margin-bottom: 2rem;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .structure-card:hover { border-color: var(--border2); }
+
+  /* INVALIDATED CARD — composition changed after filtering */
+  .structure-card.invalid-card {
+    border-color: rgba(239,83,80,0.4);
+    opacity: 0.82;
+  }
+  .invalid-banner {
+    background: linear-gradient(90deg, rgba(239,83,80,0.18) 0%, rgba(239,83,80,0.04) 100%);
+    border-bottom: 1px solid rgba(239,83,80,0.3);
+    padding: 10px 1.75rem;
+    display: flex; align-items: flex-start; gap: 10px;
+    font-family: var(--mono); font-size: 11px;
+    color: var(--red); letter-spacing: 0.08em;
+    flex-direction: column; gap: 4px;
+  }
+  .invalid-banner .inv-title { font-weight:700; font-size:12px; letter-spacing:0.12em; text-transform:uppercase; }
+  .invalid-banner .inv-detail { color: var(--text2); font-size: 11px; font-family: var(--sans); font-weight:300; letter-spacing:0; line-height:1.5; }
+
+  /* RECOMPUTED BANNER — same composition, fewer atoms, fresh props */
+  .recomputed-banner {
+    background: linear-gradient(90deg, rgba(38,198,218,0.14) 0%, rgba(38,198,218,0.03) 100%);
+    border-bottom: 1px solid rgba(38,198,218,0.25);
+    padding: 8px 1.75rem;
+    display: flex; align-items: center; gap: 10px;
+    font-family: var(--mono); font-size: 11px;
+    color: var(--teal); letter-spacing: 0.08em;
+  }
+  .recomputed-banner .rc-spin {
+    display: inline-block;
+    animation: spin 1s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* GREYED-OUT PROPERTY TILES when invalidated */
+  .metric-tile.voided { opacity: 0.28; pointer-events: none; }
+  .metric-tile.voided .mv::after { content: ' —'; color: var(--text3); }
+  .voided-label {
+    font-family: var(--mono); font-size: 10px; color: var(--red);
+    letter-spacing: 0.1em; margin-bottom: 1rem;
+    padding: 6px 10px; background: rgba(239,83,80,0.07);
+    border: 1px solid rgba(239,83,80,0.2); border-radius: 6px;
+  }
+
+  /* BEST CARD HIGHLIGHT */
+  .structure-card.best-card {
+    border-color: rgba(102,187,106,0.5);
+    box-shadow: 0 0 0 1px rgba(102,187,106,0.2), 0 4px 32px rgba(102,187,106,0.08);
+  }
+  .best-banner {
+    background: linear-gradient(90deg, rgba(102,187,106,0.18) 0%, rgba(102,187,106,0.04) 100%);
+    border-bottom: 1px solid rgba(102,187,106,0.25);
+    padding: 8px 1.75rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--green);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .best-banner .best-star { font-size: 14px; }
+
+  /* RANK BADGE on index circle */
+  .sc-index.rank-1 { background: rgba(102,187,106,0.18); border-color: rgba(102,187,106,0.5); color: var(--green); font-weight:700; }
+  .sc-index.rank-2 { background: rgba(255,202,40,0.10);  border-color: rgba(255,202,40,0.4);  color: var(--amber); }
+  .sc-index.rank-3 { background: rgba(239,83,80,0.08);   border-color: rgba(239,83,80,0.3);   color: var(--red); }
+
+  .sc-header {
+    padding: 1.2rem 1.75rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .sc-index {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+    width: 22px; height: 22px;
+    border: 1px solid var(--border2);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .sc-formula {
+    font-family: var(--mono);
+    font-size: 18px;
+    color: var(--text);
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+  .sc-atoms {
+    font-size: 12px;
+    color: var(--text3);
+    font-family: var(--mono);
+  }
+  .stability-pill {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+  }
+  .stab-stable   { background: rgba(102,187,106,0.15); color: var(--green);  border: 1px solid rgba(102,187,106,0.3); }
+  .stab-likely   { background: rgba(38,198,218,0.12);  color: var(--teal);   border: 1px solid rgba(38,198,218,0.3); }
+  .stab-meta     { background: rgba(255,202,40,0.12);  color: var(--amber);  border: 1px solid rgba(255,202,40,0.25); }
+  .stab-unstable { background: rgba(239,83,80,0.12);   color: var(--red);    border: 1px solid rgba(239,83,80,0.25); }
+
+  .sc-body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+  }
+  @media(max-width:720px) { .sc-body { grid-template-columns: 1fr; } }
+
+  /* PLOTLY VIEWER */
+  .viewer-pane {
+    border-right: 1px solid var(--border);
+    position: relative;
+    min-height: 300px;
+    background: #151820;
+  }
+  @media(max-width:720px) { .viewer-pane { border-right: none; border-bottom: 1px solid var(--border); } }
+
+  /* The Plotly div must have explicit height */
+  .viewer-plotly {
+    width: 100%;
+    height: 300px;
+  }
+
+  .viewer-hint {
+    position: absolute;
+    bottom: 8px; left: 12px;
+    font-size: 10px;
+    font-family: var(--mono);
+    color: var(--text3);
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  /* Cluster filter info bar */
+  .cluster-info {
+    padding: 7px 14px;
+    background: rgba(0,0,0,0.45);
+    border-top: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.03em;
+    line-height: 1.5;
+  }
+
+  /* METRICS PANE */
+  .metrics-pane { padding: 1.5rem; }
+  .metrics-pane h3 {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+  }
+
+  .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 1.25rem; }
+  .metric-tile {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+  }
+  .metric-tile .ml { font-size: 10px; color: var(--text3); font-family: var(--mono); margin-bottom: 4px; }
+  .metric-tile .mv {
+    font-family: var(--mono);
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .metric-tile.accent-green  .mv { color: var(--green); }
+  .metric-tile.accent-amber  .mv { color: var(--amber); }
+  .metric-tile.accent-red    .mv { color: var(--red); }
+  .metric-tile.accent-blue   .mv { color: var(--accent); }
+  .metric-tile.accent-purple .mv { color: var(--purple); }
+
+  .lattice-row {
+    display: flex; gap: 8px; margin-bottom: 1rem; flex-wrap: wrap;
+  }
+  .lat-chip {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text2);
+  }
+  .lat-chip span { color: var(--text); font-weight: 700; }
+
+  /* ELEMENTS ROW */
+  .elements-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 1rem; }
+  .el-badge {
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 700;
+    border: 1px solid var(--border2);
+    color: var(--text2);
+    background: var(--bg3);
+  }
+
+  /* ENERGY TABLE */
+  .energy-table-wrap {
+    padding: 0 1.75rem 1.75rem;
+    border-top: 1px solid var(--border);
+  }
+  .energy-table-wrap h3 {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding-top: 1.25rem;
+    margin-bottom: 1rem;
+  }
+  table.energy-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  table.energy-table th {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    text-align: left;
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--border);
+    font-weight: 400;
+  }
+  table.energy-table td {
+    padding: 9px 10px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    vertical-align: middle;
+  }
+  table.energy-table tr:last-child td { border-bottom: none; }
+  table.energy-table td.desc { color: var(--text2); font-family: var(--sans); font-size: 12px; max-width: 200px; }
+  table.energy-table td.val { text-align: right; font-weight: 700; white-space: nowrap; }
+  table.energy-table td.val.pos     { color: var(--red); }
+  table.energy-table td.val.neg     { color: var(--green); }
+  table.energy-table td.val.neutral { color: var(--accent); }
+  table.energy-table td.val.warn    { color: var(--amber); }
+
+  .verdict-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 1.2rem 1.75rem;
+    background: var(--bg3);
+    border-top: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .verdict-row .vt {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+  .verdict-big {
+    font-family: var(--mono);
+    font-size: 14px;
+    font-weight: 700;
+  }
+  .verdict-big.stable   { color: var(--green); }
+  .verdict-big.meta     { color: var(--amber); }
+  .verdict-big.unstable { color: var(--red); }
+  .verdict-note { font-size: 12px; color: var(--text2); }
+
+  /* DIVIDER SECTION */
+  .info-divider {
+    border-top: 1px solid var(--border);
+    padding-top: 2.5rem;
+    margin-top: 1rem;
+    margin-bottom: 2.5rem;
+  }
+  .info-divider h2 {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text3);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 1.25rem;
+  }
+  .info-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+  .info-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.1rem 1.25rem;
+  }
+  .info-card .ic-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 6px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .info-card p { font-size: 13px; color: var(--text2); line-height: 1.55; font-weight: 300; }
+  .info-card strong { color: var(--text); font-weight: 500; }
+
+  /* ELEMENT PERIODIC TABLE PICKER */
+  .periodic-hint { font-size: 12px; color: var(--text2); margin-bottom: 10px; font-weight: 300; }
+  .quick-elements { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+  .q-el {
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 5px;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    color: var(--text2);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .q-el:hover { border-color: var(--accent); color: var(--accent); background: rgba(79,195,247,0.07); }
+
+  .err-box {
+    background: rgba(239,83,80,0.08);
+    border: 1px solid rgba(239,83,80,0.25);
+    color: var(--red);
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    margin-top: 1rem;
+    display: none;
+  }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-icon">
+    <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5"/>
+      <line x1="12" y1="22" x2="12" y2="15.5"/>
+      <polyline points="22 8.5 12 15.5 2 8.5"/>
+    </svg>
+  </div>
+  <span class="logo-text">CD<span>VAE</span> · Crystal Generator</span>
+  <div class="header-tag">v4 · Diffusion Model</div>
+</header>
+
+<main>
+  <div class="hero">
+    <h1>Generate <em>crystal structures</em><br>from element composition</h1>
+    <p>Conditional diffusion-based crystal generation. Enter elements, explore predicted structures, energetics, and real-world stability.</p>
+  </div>
+
+  <!-- INPUT PANEL -->
+  <div class="input-panel">
+    <h2>// Configuration</h2>
+    <div class="input-row">
+      <div class="field" style="flex:2; min-width:260px;">
+        <label>Elements (type + Enter to add)</label>
+        <input type="text" id="el-input" placeholder="e.g. Fe, O, Ti …" autocomplete="off"/>
+        <div class="element-tags" id="el-tags"></div>
+        <div class="hint">Up to 6 elements. Press Enter or comma to add.</div>
+      </div>
+      <div class="field" style="max-width:150px;">
+        <label>Structures</label>
+        <select id="n-samples">
+          <option value="4" selected>4 structures</option>
+          <option value="6">6 structures</option>
+          <option value="8">8 structures</option>
+          <option value="10">10 structures</option>
+        </select>
+      </div>
+      <div class="field" style="max-width:150px;">
+        <label>Temperature</label>
+        <select id="temp">
+          <option value="0.5">0.5 · focused</option>
+          <option value="0.8" selected>0.8 · balanced</option>
+          <option value="1.0">1.0 · diverse</option>
+        </select>
+      </div>
+      <button class="btn-generate" id="gen-btn" onclick="generateStructures()">Generate →</button>
+    </div>
+
+    <div style="margin-top:12px;">
+      <div class="periodic-hint">Quick add common elements:</div>
+      <div class="quick-elements" id="quick-els"></div>
+    </div>
+
+    <div class="loading-bar" id="loading-bar"></div>
+    <div class="loading-label" id="loading-label">Running Langevin dynamics...</div>
+    <div class="err-box" id="err-box"></div>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="results">
+    <div class="results-header">
+      <h2>// Generated Structures</h2>
+      <span class="results-badge" id="results-badge">0 structures</span>
+      <button class="btn-refresh" onclick="resetResults()" style="margin-left:auto;">↺ New Search</button>
+    </div>
+    <div id="structure-cards"></div>
+
+    <!-- INFO SECTION -->
+    <div class="info-divider">
+      <h2>// Energy metrics &amp; stability guide</h2>
+      <div class="info-cards">
+        <div class="info-card">
+          <div class="ic-label">⬡ Formation energy</div>
+          <p>Energy released or required to form a compound from its pure elemental constituents. <strong>Negative values</strong> (eV/atom) indicate thermodynamic favorability — the compound prefers to exist over the separate elements.</p>
+        </div>
+        <div class="info-card">
+          <div class="ic-label">◈ Energy above hull</div>
+          <p>Distance from the convex hull of stable phases. <strong>0–25 meV/atom</strong> = thermodynamically stable. <strong>25–100 meV</strong> = metastable (may be synthesizable). <strong>&gt;100 meV</strong> = unstable, likely to decompose.</p>
+        </div>
+        <div class="info-card">
+          <div class="ic-label">◎ Band gap</div>
+          <p>Energy gap between valence and conduction bands. <strong>0 eV</strong> = metallic conductor. <strong>0–2 eV</strong> = semiconductor. <strong>&gt;2 eV</strong> = insulator or wide-gap material. Influences optical and electronic device applications.</p>
+        </div>
+        <div class="info-card">
+          <div class="ic-label">⬡ Real-world existence</div>
+          <p>A compound is likely synthesizable when: formation energy is <strong>negative</strong>, E above hull is <strong>&lt;100 meV/atom</strong>, and the lattice parameters fall within physically reasonable ranges (<strong>2.5–25 Å</strong>).</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+// ── Element data ─────────────────────────────────────────────────────────────
+const COMMON_ELEMENTS = [
+  'H','Li','C','N','O','F','Na','Mg','Al','Si','P','S','Cl',
+  'K','Ca','Ti','V','Cr','Mn','Fe','Co','Ni','Cu','Zn','Ga','Ge',
+  'As','Se','Br','Sr','Y','Zr','Nb','Mo','Pd','Ag','Ba','La',
+  'Hf','W','Pt','Au','Pb','Bi'
+];
+
+// Distinct colors per element, used for Plotly marker colors
+const ELEMENT_COLORS = {
+  'H':'#ef9a9a','He':'#b39ddb','Li':'#80cbc4','Be':'#a5d6a7','B':'#ffcc80',
+  'C':'#78909c','N':'#64b5f6','O':'#ef5350','F':'#f48fb1','Na':'#80deea',
+  'Mg':'#66bb6a','Al':'#b0bec5','Si':'#ffa726','P':'#ff7043','S':'#ffee58',
+  'Cl':'#d4e157','Ca':'#a5d6a7','Ti':'#90a4ae','Fe':'#ef5350','Cu':'#ff7043',
+  'Zn':'#4db6ac','Ag':'#b0bec5','Au':'#ffd54f','Pt':'#b0bec5','Pb':'#78909c'
+};
+
+// Covalent radii in Å — used for bond detection
+const COVALENT_RADII = {
+  H:0.31,He:0.28,Li:1.28,Be:0.96,B:0.84,C:0.73,N:0.71,O:0.66,F:0.57,Ne:0.58,
+  Na:1.66,Mg:1.41,Al:1.21,Si:1.11,P:1.07,S:1.05,Cl:1.02,Ar:1.06,
+  K:2.03,Ca:1.76,Sc:1.70,Ti:1.60,V:1.53,Cr:1.39,Mn:1.39,Fe:1.32,Co:1.26,
+  Ni:1.24,Cu:1.32,Zn:1.22,Ga:1.22,Ge:1.20,As:1.19,Se:1.20,Br:1.20,
+  Sr:1.95,Y:1.90,Zr:1.75,Nb:1.64,Mo:1.54,Pd:1.39,Ag:1.45,Ba:2.15,
+  La:2.07,Hf:1.75,W:1.54,Pt:1.36,Au:1.36,Pb:1.46,Bi:1.48,
+};
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let selectedElements = [];
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function getElColor(sym) {
+  return ELEMENT_COLORS[sym] || '#4fc3f7';
+}
+function getCovalentRadius(sym) {
+  return COVALENT_RADII[sym] || 1.20;
+}
+
+// ── Quick element buttons ─────────────────────────────────────────────────────
+const qEl = document.getElementById('quick-els');
+COMMON_ELEMENTS.forEach(el => {
+  const b = document.createElement('button');
+  b.className = 'q-el';
+  b.textContent = el;
+  b.onclick = () => addElement(el);
+  qEl.appendChild(b);
+});
+
+//Input handling
+const elInput = document.getElementById('el-input');
+elInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ',') {
+    e.preventDefault();
+    const v = elInput.value.trim().replace(',', '');
+    if (v) { addElement(v); elInput.value = ''; }
+  }
+});
+
+function addElement(sym) {
+  sym = sym.trim();
+  sym = sym.charAt(0).toUpperCase() + sym.slice(1).toLowerCase();
+  if (!sym || selectedElements.includes(sym) || selectedElements.length >= 6) return;
+  if (!/^[A-Z][a-z]?$/.test(sym)) return;
+  selectedElements.push(sym);
+  renderTags();
+}
+
+function removeElement(sym) {
+  selectedElements = selectedElements.filter(e => e !== sym);
+  renderTags();
+}
+
+function renderTags() {
+  const container = document.getElementById('el-tags');
+  container.innerHTML = '';
+  selectedElements.forEach(sym => {
+    const tag = document.createElement('div');
+    tag.className = 'el-tag';
+    tag.innerHTML = `${sym} <span class="rm" onclick="removeElement('${sym}')">×</span>`;
+    container.appendChild(tag);
+  });
+}
+
+//  UI state 
+function setError(msg) {
+  const b = document.getElementById('err-box');
+  b.textContent = msg;
+  b.style.display = msg ? 'block' : 'none';
+}
+
+function setLoading(active) {
+  document.getElementById('loading-bar').classList.toggle('active', active);
+  document.getElementById('loading-label').classList.toggle('active', active);
+  document.getElementById('gen-btn').disabled = active;
+}
+
+// ── Generate: calls FastAPI backend 
+async function generateStructures() {
+  setError('');
+
+  if (selectedElements.length === 0) {
+    setError('Please add at least one element.');
+    return;
+  }
+
+  const nSamples = parseInt(document.getElementById('n-samples').value);
+  const temp     = parseFloat(document.getElementById('temp').value);
+
+  setLoading(true);
+
+  try {
+    const resp = await fetch('http://127.0.0.1:8000/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        elements:    selectedElements,
+        n_samples:   nSamples,
+        temperature: temp
+      })
+    });
+
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}: ${resp.statusText}`);
+
+    const results = await resp.json();
+    if (results && results.error) throw new Error(results.error);
+    if (!Array.isArray(results) || results.length === 0)
+      throw new Error('Backend returned no structures.');
+
+    renderResults(results);
+
+  } catch (e) {
+    setError('Backend error: ' + e.message);
+  }
+
+  setLoading(false);
+}
+
+// ── Reset / refresh
+function resetResults() {
+  const res = document.getElementById('results');
+  res.classList.remove('visible');
+  document.getElementById('structure-cards').innerHTML = '';
+  document.getElementById('results-badge').textContent = '0 structures';
+  // Scroll back to top / input panel
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  REAL-WORLD STABILITY SCORING
+//
+//  The model's raw ehull is calibrated to show nearly everything as "stable"
+//  because it optimises for low-energy configurations, not real-world existence.
+//  We apply a multi-factor scoring system that penalises:
+//    • Positive formation energy  (endothermic → unlikely)
+//    • Unphysical lattice params  (too small or too large)
+//    • Extreme band gap           (unphysical electronic structure)
+//    • Very high ehull            (clearly off the hull)
+//
+//  Score 0–100 → four tiers:
+//    85–100  CONFIRMED STABLE      (green)
+//    60–84   LIKELY SYNTHESIZABLE  (teal)
+//    35–59   METASTABLE            (amber)
+//    0–34    UNSTABLE              (red)
+// ══════════════════════════════════════════════════════════════════════════════
+function realWorldScore(r) {
+  let score = 100;
+  const [a] = r.abc;
+
+  // Formation energy: must be negative to be favourable
+  if (r.energy >= 0)         score -= 35;   // endothermic — big penalty
+  else if (r.energy > -0.1)  score -= 15;   // barely exothermic — weak signal
+  else if (r.energy > -0.5)  score -=  5;   // mildly stable
+  // strongly negative energy: no penalty
+
+  // Ehull: model scores tend to cluster near 0 so we spread the scale
+  if      (r.ehull > 0.200) score -= 40;
+  else if (r.ehull > 0.100) score -= 25;
+  else if (r.ehull > 0.050) score -= 12;
+  else if (r.ehull > 0.025) score -=  5;
+  // ≤ 25 meV: no penalty
+
+  // Lattice parameter a: physical range 2.5–25 Å
+  if (a < 2.0 || a > 30)    score -= 30;   // completely unphysical
+  else if (a < 2.5 || a > 25) score -= 12; // borderline
+
+  // Band gap: must be ≥ 0; negative = unphysical DFT artefact
+  if (r.band_gap < -0.05)    score -= 20;
+  else if (r.band_gap < 0)   score -=  8;
+
+  // Atom count sanity: < 2 or > 50 is suspicious
+  if (r.n_atoms < 2)         score -= 20;
+  else if (r.n_atoms > 50)   score -=  8;
+
+  return Math.max(0, Math.min(100, score));
+}
+
+function stabilityTier(score) {
+  if (score >= 85) return 'confirmed';
+  if (score >= 60) return 'likely';
+  if (score >= 35) return 'meta';
+  return 'unstable';
+}
+
+function getStabilityClass(r) {
+  const t = stabilityTier(realWorldScore(r));
+  if (t === 'confirmed') return 'stable';
+  if (t === 'likely')    return 'stable'; // maps to green pill
+  if (t === 'meta')      return 'meta';
+  return 'unstable';
+}
+
+function getStabilityLabel(r) {
+  const t = stabilityTier(realWorldScore(r));
+  if (t === 'confirmed') return 'CONFIRMED STABLE';
+  if (t === 'likely')    return 'LIKELY STABLE';
+  if (t === 'meta')      return 'METASTABLE';
+  return 'UNSTABLE';
+}
+
+function getPillClass(r) {
+  const t = stabilityTier(realWorldScore(r));
+  if (t === 'confirmed') return 'stab-stable';
+  if (t === 'likely')    return 'stab-likely';
+  if (t === 'meta')      return 'stab-meta';
+  return 'stab-unstable';
+}
+
+function getEnergyClass(val) {
+  if (val < 0) return 'neg';
+  if (val > 0) return 'pos';
+  return 'neutral';
+}
+
+function buildFormula(symbols) {
+  const cnt = {};
+  symbols.forEach(s => cnt[s] = (cnt[s] || 0) + 1);
+  return Object.entries(cnt)
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([el, n]) => el + (n > 1 ? `<sub>${n}</sub>` : ''))
+    .join('');
+}
+
+function getVerdictNote(r) {
+  const score = realWorldScore(r);
+  const tier  = stabilityTier(score);
+  const [a]   = r.abc;
+  const physicalLattice = a >= 2.5 && a <= 25;
+  const negE  = r.energy < 0;
+
+  if (tier === 'confirmed')
+    return `Score ${score}/100. Negative formation energy, low hull distance, and physical lattice parameters all confirm thermodynamic stability. High confidence this compound can be synthesized.`;
+  if (tier === 'likely' && negE)
+    return `Score ${score}/100. Exothermic formation and acceptable hull distance suggest synthesizability, though one or more secondary factors introduce mild uncertainty.`;
+  if (tier === 'meta' && negE)
+    return `Score ${score}/100. Exothermic but hull distance or lattice parameters are borderline. May be accessible under high-pressure synthesis or thin-film deposition.`;
+  if (tier === 'meta')
+    return `Score ${score}/100. Endothermic formation energy makes this compound energetically unfavourable. Metastable phases can exist transiently but are prone to decomposition.`;
+  if (!physicalLattice)
+    return `Score ${score}/100. Lattice parameter a = ${a.toFixed(2)} Å is outside the physically meaningful range (2.5–25 Å). The generated structure is likely an artefact.`;
+  return `Score ${score}/100. Multiple stability criteria fail: positive formation energy, high hull distance, or unphysical structural parameters. This compound is unlikely to be synthesizable.`;
+}
+
+// ── Rank structures by real-world score (best first) ─────────────────────────
+function rankResults(results) {
+  return [...results]
+    .map((r, origIdx) => ({ r, score: realWorldScore(r), origIdx }))
+    .sort((a, b) => b.score - a.score);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  COMPOSITION COMPARISON HELPERS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/** Returns a Set of unique element symbols in an array of symbols */
+function elementSet(symbols) { return new Set(symbols); }
+
+/** True if both arrays have exactly the same set of element symbols */
+function sameComposition(symsA, symsB) {
+  const a = elementSet(symsA), b = elementSet(symsB);
+  if (a.size !== b.size) return false;
+  for (const el of a) if (!b.has(el)) return false;
+  return true;
+}
+
+/** Elements present in full but missing from cluster */
+function lostElements(fullSyms, clusterSyms) {
+  const cs = elementSet(clusterSyms);
+  return [...elementSet(fullSyms)].filter(e => !cs.has(e));
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  PROPERTY TILE BUILDER
+//  Builds the metrics-pane HTML from a property object {energy,ehull,band_gap,
+//  n_atoms,abc,angles}. Accepts an optional `voided` flag to grey everything.
+// ══════════════════════════════════════════════════════════════════════════════
+function buildPropertiesHTML(props, r_orig, voided = false) {
+  const { energy, ehull, band_gap, n_atoms, abc, angles, symbols } = props;
+  const [a, b, cv] = abc;
+  const [alpha, beta, gamma] = angles || [90, 90, 90];
+  const sc = getStabilityClass(props);
+  const uniqueEls = [...new Set(symbols)];
+  const voidCls = voided ? ' voided' : '';
+
+  return `
+    <div class="metrics-pane">
+      <h3>// Properties${voided ? ' <span style="color:var(--red);font-size:9px;">INVALIDATED</span>' : ''}</h3>
+
+      ${voided ? `<div class="voided-label">⚠ Properties shown were predicted for ${buildFormula(r_orig.symbols)} — not for the displayed fragment. Do not use these values.</div>` : ''}
+
+      <div class="elements-row">
+        ${uniqueEls.map(el =>
+          `<div class="el-badge" style="border-color:${getElColor(el)}44;color:${getElColor(el)}">${el}</div>`
+        ).join('')}
+      </div>
+
+      <div class="metrics-grid">
+        <div class="metric-tile${voidCls} ${!voided && energy < 0 ? 'accent-green' : !voided ? 'accent-red' : ''}">
+          <div class="ml">Formation E</div>
+          <div class="mv">${voided ? '—' : energy.toFixed(3)} <small style="font-size:10px;font-weight:400">eV/at</small></div>
+        </div>
+        <div class="metric-tile${voidCls} ${!voided ? (sc === 'stable' ? 'accent-green' : sc === 'meta' ? 'accent-amber' : 'accent-red') : ''}">
+          <div class="ml">E above hull</div>
+          <div class="mv">${voided ? '—' : (ehull * 1000).toFixed(1)} <small style="font-size:10px;font-weight:400">meV/at</small></div>
+        </div>
+        <div class="metric-tile${voidCls} ${!voided ? (band_gap < 0.05 ? 'accent-purple' : band_gap < 2 ? 'accent-blue' : 'accent-amber') : ''}">
+          <div class="ml">Band gap</div>
+          <div class="mv">${voided ? '—' : band_gap.toFixed(3)} <small style="font-size:10px;font-weight:400">eV</small></div>
+        </div>
+        <div class="metric-tile${voidCls}">
+          <div class="ml">Atoms / cell</div>
+          <div class="mv">${n_atoms}</div>
+        </div>
+      </div>
+
+      <div class="lattice-row">
+        <div class="lat-chip">a=<span>${a} Å</span></div>
+        <div class="lat-chip">b=<span>${b} Å</span></div>
+        <div class="lat-chip">c=<span>${cv} Å</span></div>
+        <div class="lat-chip">α=<span>${alpha}°</span></div>
+        <div class="lat-chip">β=<span>${beta}°</span></div>
+        <div class="lat-chip">γ=<span>${gamma}°</span></div>
+      </div>
+
+      ${voided ? '' : `<div style="font-size:12px;color:var(--text2);font-weight:300;">
+        ${band_gap < 0.05  ? '⬤ Metallic conductor'       :
+          band_gap < 0.5   ? '⬤ Narrow-gap semiconductor'  :
+          band_gap < 2.0   ? '⬤ Semiconductor'             :
+                             '⬤ Insulator / wide-gap material'}
+      </div>`}
+    </div>`;
+}
+
+function buildEnergyTableHTML(props, voided = false) {
+  const { energy, ehull, band_gap, abc } = props;
+  const [a] = abc;
+  if (voided) {
+    return `
+      <div class="energy-table-wrap">
+        <h3>// Energy breakdown &amp; stability analysis</h3>
+        <div style="padding:1rem 0; color:var(--red); font-family:var(--mono); font-size:12px; opacity:0.7;">
+          ✗ Energy table hidden — properties are for a different composition and are not valid for the displayed structure.
+        </div>
+      </div>`;
+  }
+  const sc = getStabilityClass(props);
+  return `
+    <div class="energy-table-wrap">
+      <h3>// Energy breakdown &amp; stability analysis</h3>
+      <table class="energy-table">
+        <thead><tr><th>Metric</th><th>Description</th><th>Value</th><th>Threshold</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Formation energy</td>
+            <td class="desc">Energy vs. pure elements</td>
+            <td class="val ${getEnergyClass(energy)}">${energy.toFixed(4)} eV/atom</td>
+            <td class="val neutral">&lt; 0 eV/atom</td>
+            <td>${energy < 0 ? `<span style="color:var(--green)">✓ Favorable</span>` : `<span style="color:var(--red)">✗ Endothermic</span>`}</td>
+          </tr>
+          <tr>
+            <td>Energy above hull</td>
+            <td class="desc">Distance from convex hull</td>
+            <td class="val ${ehull < 0.025 ? 'neg' : ehull < 0.1 ? 'warn' : 'pos'}">${(ehull * 1000).toFixed(2)} meV/atom</td>
+            <td class="val neutral">&lt; 25 meV/atom</td>
+            <td>${ehull < 0.025 ? `<span style="color:var(--green)">✓ On hull (stable)</span>` : ehull < 0.1 ? `<span style="color:var(--amber)">⚠ Metastable</span>` : `<span style="color:var(--red)">✗ Above hull</span>`}</td>
+          </tr>
+          <tr>
+            <td>Band gap</td>
+            <td class="desc">Electronic character</td>
+            <td class="val neutral">${band_gap.toFixed(3)} eV</td>
+            <td class="val neutral">— (informational)</td>
+            <td style="color:var(--text2)">${band_gap < 0.05 ? 'Metallic' : band_gap < 2 ? 'Semiconductor' : 'Insulator'}</td>
+          </tr>
+          <tr>
+            <td>Lattice a</td>
+            <td class="desc">Unit cell length a</td>
+            <td class="val ${a >= 2.5 && a <= 25 ? 'neg' : 'pos'}">${a} Å</td>
+            <td class="val neutral">2.5–25 Å</td>
+            <td>${a >= 2.5 && a <= 25 ? `<span style="color:var(--green)">✓ Physical</span>` : `<span style="color:var(--red)">✗ Unphysical</span>`}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>`;
+}
+
+function buildVerdictHTML(props, voided = false) {
+  if (voided) {
+    return `
+      <div class="verdict-row" style="background:rgba(239,83,80,0.06);">
+        <div class="vt">Final verdict</div>
+        <div class="verdict-big unstable">✗ Cannot be assessed</div>
+        <div class="verdict-note">The model predicted properties for a different composition than what is displayed. No verdict can be derived for the filtered fragment.</div>
+      </div>`;
+  }
+  const sc = getStabilityClass(props);
+  return `
+    <div class="verdict-row">
+      <div class="vt">Final verdict</div>
+      <div class="verdict-big ${sc}">${
+        sc === 'stable' ? '✓ Can exist in real world' :
+        sc === 'meta'   ? '⚠ Potentially synthesizable' :
+                          '✗ Unlikely to be stable'}</div>
+      <div class="verdict-note">${getVerdictNote(props)}</div>
+    </div>`;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  UPDATE CARD PROPS — called after /recompute responds
+//  Replaces the spinning placeholder with fresh property values
+// ══════════════════════════════════════════════════════════════════════════════
+function updateCardWithRecomputedProps(idx, freshProps, r_orig) {
+  const metricsEl = document.getElementById(`metrics-${idx}`);
+  const tableEl   = document.getElementById(`table-${idx}`);
+  const verdictEl = document.getElementById(`verdict-${idx}`);
+  const bannerEl  = document.getElementById(`rc-banner-${idx}`);
+  const headerAtoms = document.getElementById(`header-atoms-${idx}`);
+
+  if (metricsEl)  metricsEl.outerHTML  = `<div id="metrics-${idx}">${buildPropertiesHTML(freshProps, r_orig, false)}</div>`;
+  if (tableEl)    tableEl.outerHTML    = `<div id="table-${idx}">${buildEnergyTableHTML(freshProps, false)}</div>`;
+  if (verdictEl)  verdictEl.outerHTML  = `<div id="verdict-${idx}">${buildVerdictHTML(freshProps, false)}</div>`;
+  if (bannerEl)   bannerEl.innerHTML   = `◈ Properties recomputed for ${buildFormula(freshProps.symbols)} (${freshProps.n_atoms} atoms after outlier removal)`;
+  if (bannerEl)   bannerEl.querySelector('.rc-spin') && (bannerEl.querySelector('.rc-spin').remove());
+  if (headerAtoms) headerAtoms.textContent = `${freshProps.n_atoms} atoms · score ${realWorldScore(freshProps)}/100`;
+}
+
+// ── Call /recompute endpoint ──────────────────────────────────────────────────
+async function recomputeProperties(idx, cluster, r_orig) {
+  // Convert cluster atom list → frac coords via inverse lattice
+  // We send cartesian + lattice; backend converts to frac internally
+  const cartesian = cluster.map(a => [a.x, a.y, a.z]);
+  const symbols   = cluster.map(a => a.elem);
+
+  try {
+    const resp = await fetch('http://127.0.0.1:8000/recompute', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        cartesian: cartesian,
+        symbols:   symbols,
+        lattice:   r_orig.lattice
+      })
+    });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const data = await resp.json();
+    if (data.error) throw new Error(data.error);
+
+    // Attach abc and angles from original (lattice unchanged)
+    data.abc    = r_orig.abc;
+    data.angles = r_orig.angles || [90, 90, 90];
+    data.symbols = symbols;
+    data.n_atoms = cluster.length;
+
+    updateCardWithRecomputedProps(idx, data, r_orig);
+  } catch (e) {
+    const bannerEl = document.getElementById(`rc-banner-${idx}`);
+    if (bannerEl) bannerEl.innerHTML = `⚠ Recompute failed: ${e.message} — showing original properties`;
+  }
+}
+
+// ── Render results ────────────────────────────────────────────────────────────
+function renderResults(results) {
+  document.getElementById('results').classList.add('visible');
+  document.getElementById('results-badge').textContent =
+    `${results.length} structure${results.length > 1 ? 's' : ''}`;
+
+  const container = document.getElementById('structure-cards');
+  container.innerHTML = '';
+
+  // ── Pre-compute cluster for every structure FIRST ──────────────────────────
+  // This ensures properties displayed always match the visualised atoms
+  const enriched = results.map(r => {
+    const allAtoms = r.cartesian.map((pos, i) => ({
+      x: pos[0], y: pos[1], z: pos[2], elem: r.symbols[i] || 'X'
+    }));
+    const { cluster, dropped, hadBonds } = largestBondedCluster(allAtoms);
+    const lost   = dropped > 0 ? lostElements(r.symbols, cluster.map(a => a.elem)) : [];
+    const intact = lost.length === 0; // same element set survived
+    // hadBonds=false means ALL atoms are floating with zero connectivity —
+    // the structure is physically meaningless regardless of model property values
+    return { r, allAtoms, cluster, dropped, hadBonds, lost, intact };
+  });
+
+  // Sort by score using cluster-derived props where intact, raw props otherwise
+  const ranked = [...enriched]
+    .map((e, i) => {
+      const scoreProps = e.intact
+        ? { ...e.r, symbols: e.cluster.map(a => a.elem), n_atoms: e.cluster.length }
+        : e.r;
+      return { ...e, score: realWorldScore(scoreProps), origIdx: i };
+    })
+    .sort((a, b) => b.score - a.score);
+
+  ranked.forEach(({ r, cluster, dropped, hadBonds, lost, intact, score }, rankIdx) => {
+    const isBest  = rankIdx === 0;
+    const idx     = rankIdx;
+    const [a, b, cv]           = r.abc;
+    const [alpha, beta, gamma] = r.angles || [90, 90, 90];
+
+    // ── Decide what props to show initially ───────────────────────────────────
+    // CASE 1: no atoms dropped at all → show raw props as-is
+    // CASE 2: composition intact, atoms dropped → show raw props + trigger /recompute
+    // CASE 3: composition changed → void all props, show warning
+    // voided when:
+    //   (a) composition changed — element was lost entirely, OR
+    //   (b) no bonds at all     — structure is physically meaningless,
+    //       model properties cannot be trusted for an unconnected atom cloud
+    const voided       = (!intact && dropped > 0) || !hadBonds;
+    const needRecompute = intact && dropped > 0 && hadBonds;
+
+    // For display, use cluster symbols if intact, original if not
+    const displaySymbols = intact ? cluster.map(a => a.elem) : r.symbols;
+    const displayNAtoms  = intact ? cluster.length : r.n_atoms;
+    const formula        = buildFormula(displaySymbols);
+
+    const sc       = voided ? 'unstable' : getStabilityClass(r);
+    const pillClass = voided ? 'stab-unstable' : getPillClass(r);
+    const label    = voided ? 'INVALID' : getStabilityLabel(r);
+
+    const card = document.createElement('div');
+    card.className = [
+      'structure-card',
+      isBest && !voided ? 'best-card' : '',
+      voided ? 'invalid-card' : ''
+    ].filter(Boolean).join(' ');
+
+    // ── Top banner ────────────────────────────────────────────────────────────
+    let topBanner = '';
+    if (voided) {
+      // Two distinct reasons for invalidation — show specific message for each
+      const noBondsCase = !hadBonds;
+      topBanner = noBondsCase ? `
+        <div class="invalid-banner">
+          <span class="inv-title">✗ No Bonds Detected — Structure Invalid</span>
+          <span class="inv-detail">
+            All ${r.n_atoms} atoms of <strong>${buildFormula(r.symbols)}</strong> are spatially isolated —
+            no chemical bonds could be detected between any pair.
+            This is an unconnected atom cloud, not a crystal.
+            The model's predicted energy (${r.energy.toFixed(3)} eV/at), band gap, and hull distance
+            were computed from the latent vector before any structural relaxation and
+            do NOT describe a physically realizable compound.
+            Consider regenerating with a lower temperature (0.5 · focused) for better convergence.
+          </span>
+        </div>` : `
+        <div class="invalid-banner">
+          <span class="inv-title">✗ Composition Changed — Properties Invalidated</span>
+          <span class="inv-detail">
+            Model predicted properties for <strong>${buildFormula(r.symbols)}</strong> (${r.n_atoms} atoms),
+            but bonding analysis removed <strong>${lost.join(', ')}</strong> entirely.
+            The displayed fragment <strong>${formula}</strong> is a different compound.
+            Energy, band gap, and hull distance shown below are for ${buildFormula(r.symbols)} and do NOT apply here.
+          </span>
+        </div>`;
+    } else if (needRecompute) {
+      topBanner = `
+        <div class="recomputed-banner" id="rc-banner-${idx}">
+          <span class="rc-spin">⟳</span>
+          Recomputing properties for ${formula} (${cluster.length} atoms)…
+        </div>`;
+    } else if (isBest) {
+      topBanner = `<div class="best-banner"><span class="best-star">★</span> BEST PREDICTED STRUCTURE &nbsp;·&nbsp; Score ${score}/100</div>`;
+    }
+
+    card.innerHTML = `
+      ${topBanner}
+      <div class="sc-header">
+        <div class="sc-index ${rankIdx===0?'rank-1':rankIdx===1?'rank-2':rankIdx===2?'rank-3':''}">#${idx+1}</div>
+        <div class="sc-formula">${formula}</div>
+        <div class="sc-atoms" id="header-atoms-${idx}">${displayNAtoms} atoms · score ${score}/100</div>
+        <div class="stability-pill ${pillClass}">${label}</div>
+      </div>
+
+      <div class="sc-body">
+        <div class="viewer-pane">
+          <div class="viewer-plotly" id="viewer-${idx}"></div>
+          <div class="viewer-hint">drag · scroll · double-click to reset</div>
+          <div class="cluster-info" id="cluster-info-${idx}" style="display:none;"></div>
+        </div>
+        <div id="metrics-${idx}">${buildPropertiesHTML(
+          { ...r, symbols: displaySymbols, n_atoms: displayNAtoms },
+          r, voided
+        )}</div>
+      </div>
+
+      <div id="table-${idx}">${buildEnergyTableHTML(r, voided)}</div>
+      <div id="verdict-${idx}">${buildVerdictHTML(r, voided)}</div>
+    `;
+
+    container.appendChild(card);
+
+    // ── Draw viewer (cluster already computed) ────────────────────────────────
+    requestAnimationFrame(() => initPlotlyViewerFromCluster(idx, r, cluster, dropped, hadBonds));
+
+    // ── Trigger recompute if composition intact but atoms dropped ─────────────
+    if (needRecompute) {
+      recomputeProperties(idx, cluster, r);
+    }
+  });
+
+  setTimeout(() =>
+    document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' }),
+    300
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  CONNECTED-COMPONENT FILTER
+//  Keeps only the largest bonded cluster of atoms, discards floaters.
+// ══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Returns true if atoms[i] and atoms[j] are within bonding distance.
+ * Uses covalent radii sum × 1.25 as the cutoff (same as bond drawing).
+ */
+function areBonded(a, b) {
+  const dx = a.x - b.x, dy = a.y - b.y, dz = a.z - b.z;
+  const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+  return dist > 0.1 && dist < (getCovalentRadius(a.elem) + getCovalentRadius(b.elem)) * 1.25;
+}
+
+/**
+ * Union-Find helpers for connected components.
+ */
+function makeUF(n) {
+  const parent = Array.from({length: n}, (_, i) => i);
+  const rank   = new Array(n).fill(0);
+  function find(x) {
+    while (parent[x] !== x) { parent[x] = parent[parent[x]]; x = parent[x]; }
+    return x;
+  }
+  function union(x, y) {
+    const px = find(x), py = find(y);
+    if (px === py) return;
+    if (rank[px] < rank[py]) parent[px] = py;
+    else if (rank[px] > rank[py]) parent[py] = px;
+    else { parent[py] = px; rank[px]++; }
+  }
+  return { find, union };
+}
+
+/**
+ * Given an atom list, returns only the atoms in the largest connected component.
+ * Also returns how many atoms were dropped.
+ *
+ * Strategy:
+ *   1. Build adjacency via covalent-radius bond check.
+ *   2. Union-Find to label components.
+ *   3. Keep the component with the most atoms.
+ *   4. If ALL atoms are isolated (no bonds at all), return all atoms unchanged
+ *      so the viewer still shows something.
+ */
+function largestBondedCluster(atoms) {
+  const n = atoms.length;
+  if (n === 0) return { cluster: atoms, dropped: 0, hadBonds: false };
+
+  const { find, union } = makeUF(n);
+
+  let bondCount = 0;
+  for (let i = 0; i < n; i++) {
+    for (let j = i + 1; j < n; j++) {
+      if (areBonded(atoms[i], atoms[j])) {
+        union(i, j);
+        bondCount++;
+      }
+    }
+  }
+
+  // No bonds at all → show everything, flag it
+  if (bondCount === 0) return { cluster: atoms, dropped: 0, hadBonds: false };
+
+  // Count component sizes
+  const compSize = {};
+  for (let i = 0; i < n; i++) {
+    const root = find(i);
+    compSize[root] = (compSize[root] || 0) + 1;
+  }
+
+  // Find the root with the most members
+  const bestRoot = Object.entries(compSize)
+    .reduce((best, [root, size]) => size > best[1] ? [+root, size] : best, [-1, 0])[0];
+
+  const cluster = atoms.filter((_, i) => find(i) === bestRoot);
+  return { cluster, dropped: n - cluster.length, hadBonds: true };
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  PLOTLY 3D CRYSTAL VIEWER
+// ══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Build bond line segments between atoms (null-separated for Plotly).
+ */
+function buildBondTraces(atoms) {
+  const xs = [], ys = [], zs = [];
+  for (let i = 0; i < atoms.length; i++) {
+    for (let j = i + 1; j < atoms.length; j++) {
+      if (areBonded(atoms[i], atoms[j])) {
+        xs.push(atoms[i].x, atoms[j].x, null);
+        ys.push(atoms[i].y, atoms[j].y, null);
+        zs.push(atoms[i].z, atoms[j].z, null);
+      }
+    }
+  }
+  return { xs, ys, zs };
+}
+
+/**
+ * Build 12 edges of the unit cell as null-separated line segments.
+ * lattice: [[a0,a1,a2],[b0,b1,b2],[c0,c1,c2]]  — row vectors in Å
+ */
+function buildCellEdges(lat) {
+  const O   = [0,0,0];
+  const A   = lat[0], B = lat[1], C = lat[2];
+  const AB  = [A[0]+B[0], A[1]+B[1], A[2]+B[2]];
+  const AC  = [A[0]+C[0], A[1]+C[1], A[2]+C[2]];
+  const BC  = [B[0]+C[0], B[1]+C[1], B[2]+C[2]];
+  const ABC = [A[0]+B[0]+C[0], A[1]+B[1]+C[1], A[2]+B[2]+C[2]];
+  const edges = [
+    [O,A],[O,B],[O,C],
+    [A,AB],[A,AC],[B,AB],[B,BC],
+    [C,AC],[C,BC],[AB,ABC],[AC,ABC],[BC,ABC]
+  ];
+  const xs = [], ys = [], zs = [];
+  edges.forEach(([p,q]) => { xs.push(p[0],q[0],null); ys.push(p[1],q[1],null); zs.push(p[2],q[2],null); });
+  return { xs, ys, zs };
+}
+
+/**
+ * One scatter3d trace per element for distinct coloring + legend.
+ */
+function buildAtomTraces(atoms) {
+  const byEl = {};
+  atoms.forEach(a => {
+    if (!byEl[a.elem]) byEl[a.elem] = { x:[], y:[], z:[] };
+    byEl[a.elem].x.push(a.x);
+    byEl[a.elem].y.push(a.y);
+    byEl[a.elem].z.push(a.z);
+  });
+  return Object.entries(byEl).map(([sym, d]) => ({
+    type: 'scatter3d', mode: 'markers', name: sym,
+    x: d.x, y: d.y, z: d.z,
+    hovertemplate: `<b>${sym}</b><br>x:%{x:.3f} y:%{y:.3f} z:%{z:.3f}<extra></extra>`,
+    marker: {
+      symbol: 'circle',
+      size: Math.max(4, getCovalentRadius(sym) * 5),
+      color: getElColor(sym),
+      opacity: 0.93,
+      line: { width: 0.5, color: 'rgba(255,255,255,0.25)' }
+    }
+  }));
+}
+
+/**
+ * Update the cluster-info badge injected below the viewer.
+ */
+function updateClusterBadge(idx, cluster, dropped, totalAtoms, hadBonds) {
+  const el = document.getElementById(`cluster-info-${idx}`);
+  if (!el) return;
+
+  if (!hadBonds) {
+    el.innerHTML = `<span style="color:var(--amber)">⚠ No bonds detected — showing all ${totalAtoms} atoms</span>`;
+    el.style.display = 'block';
+    return;
+  }
+  if (dropped === 0) {
+    el.innerHTML = `<span style="color:var(--green)">✓ All ${totalAtoms} atoms bonded — no outliers</span>`;
+    el.style.display = 'block';
+    return;
+  }
+  // Build formula of the cluster only
+  const clusterFormula = buildFormula(cluster.map(a => a.elem));
+  el.innerHTML =
+    `<span style="color:var(--accent)">◈ Largest bonded cluster: </span>` +
+    `<span style="font-weight:700;color:var(--text)">${clusterFormula}</span>` +
+    `<span style="color:var(--text2)"> · ${cluster.length} atoms</span>` +
+    `<span style="color:var(--red)"> · ${dropped} outlier${dropped > 1 ? 's' : ''} removed</span>`;
+  el.style.display = 'block';
+}
+
+/**
+ * initPlotlyViewerFromCluster — accepts pre-computed cluster from renderResults.
+ * No redundant Union-Find; cluster, dropped, hadBonds already known.
+ */
+function initPlotlyViewerFromCluster(idx, r, cluster, dropped, hadBonds) {
+  const el = document.getElementById(`viewer-${idx}`);
+  if (!el) return;
+
+  // Update the cluster-info badge
+  updateClusterBadge(idx, cluster, dropped, r.cartesian.length, hadBonds);
+
+  const atomTraces = buildAtomTraces(cluster);
+
+  const { xs: bx, ys: by, zs: bz } = buildBondTraces(cluster);
+  const bondTrace = {
+    type: 'scatter3d', mode: 'lines', name: 'bonds',
+    x: bx, y: by, z: bz,
+    showlegend: false, hoverinfo: 'none',
+    line: { color: 'rgba(120,140,200,0.50)', width: 2.5 }
+  };
+
+  const { xs: cx, ys: cy, zs: cz } = buildCellEdges(r.lattice);
+  const cellTrace = {
+    type: 'scatter3d', mode: 'lines', name: 'unit cell',
+    x: cx, y: cy, z: cz,
+    showlegend: false, hoverinfo: 'none',
+    line: { color: 'rgba(79,195,247,0.30)', width: 1.5, dash: 'dot' }
+  };
+
+  const layout = {
+    paper_bgcolor: '#151820', plot_bgcolor: '#151820',
+    margin: { l:0, r:0, t:0, b:0 },
+    legend: {
+      font: { family:"'Space Mono', monospace", size:10, color:'#8a9ab8' },
+      bgcolor: 'rgba(0,0,0,0)',
+      bordercolor: 'rgba(255,255,255,0.07)', borderwidth:1,
+      x:0.02, y:0.98, xanchor:'left', yanchor:'top'
+    },
+    scene: {
+      bgcolor: '#151820',
+      xaxis: { showgrid:false, zeroline:false, showticklabels:false, showline:false, title:'', backgroundcolor:'#151820' },
+      yaxis: { showgrid:false, zeroline:false, showticklabels:false, showline:false, title:'', backgroundcolor:'#151820' },
+      zaxis: { showgrid:false, zeroline:false, showticklabels:false, showline:false, title:'', backgroundcolor:'#151820' },
+      camera: { eye:{ x:1.6, y:1.6, z:1.2 } }
+    }
+  };
+
+  Plotly.newPlot(el, [...atomTraces, bondTrace, cellTrace], layout,
+    { responsive:true, displayModeBar:false, scrollZoom:true });
+}
+</script>
+
+</body>
+</html>

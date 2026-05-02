@@ -1,0 +1,27 @@
+data_generated
+_cell_length_a   5.5125
+_cell_length_b   5.4623
+_cell_length_c   6.4595
+_cell_angle_alpha 82.1193
+_cell_angle_beta  82.4676
+_cell_angle_gamma 78.3774
+_symmetry_space_group_name_H-M 'P 1'
+
+loop_
+ _atom_site_label
+ _atom_site_type_symbol
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ O1  O  0.727761  0.525345  0.679581
+ O2  O  0.292208  0.250791  0.339152
+ Mn3  Mn  0.252133  0.451013  0.228022
+ Mn4  Mn  0.848101  0.315851  0.773199
+ O5  O  0.221973  0.620999  0.466698
+ Mn6  Mn  0.271526  0.915741  0.012542
+ Mn7  Mn  0.313988  0.950447  0.328888
+ O8  O  0.647854  0.051085  0.955858
+ O9  O  0.171970  0.946808  0.842936
+ Mn10  Mn  0.885888  0.468316  0.352830
+ O11  O  0.381081  0.616681  0.005093
+ O12  O  0.059353  0.750607  0.237806

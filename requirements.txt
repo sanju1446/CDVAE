@@ -1,0 +1,17 @@
+torch
+
+numpy
+pandas
+matplotlib
+scikit-learn
+pyyaml
+
+Pytorch-lightning
+omegaconf
+hydra-core
+
+pymatgen
+ase
+tqdm
+fastapi
+uvicorn

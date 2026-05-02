@@ -1,0 +1,25 @@
+data_generated
+_cell_length_a   4.5671
+_cell_length_b   4.9743
+_cell_length_c   5.4544
+_cell_angle_alpha 92.1801
+_cell_angle_beta  93.8678
+_cell_angle_gamma 89.3212
+_symmetry_space_group_name_H-M 'P 1'
+
+loop_
+ _atom_site_label
+ _atom_site_type_symbol
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ B1  B  0.672680  0.516627  0.817081
+ B2  B  0.994118  0.606640  0.682245
+ Ni3  Ni  0.622666  0.364335  0.899985
+ B4  B  0.619899  0.661812  0.784681
+ Ni5  Ni  0.613826  0.738950  0.761581
+ Ni6  Ni  0.167143  0.771809  0.297359
+ Z597  Z59  0.818110  0.843771  0.047414
+ Ni8  Ni  0.305343  0.790371  0.950506
+ B9  B  0.812319  0.877560  0.499135
+ Z5910  Z59  0.474737  0.363841  0.364320

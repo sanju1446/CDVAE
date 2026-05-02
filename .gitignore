@@ -1,7 +1,4 @@
-*.csv 
-*.pth 
-*.ckpt 
-*.ipynb 
-__pycache__/ 
-data/ 
-datasets/ 
+__pycache__/
+*.pt
+dataset_files/
+*.csv
